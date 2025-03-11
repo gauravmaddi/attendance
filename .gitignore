@@ -1,0 +1,24 @@
+# Ignore Python & Django files
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+.env
+
+# Virtual environment
+venv/
+env/
+
+# Ignore logs & compiled files
+*.log
+*.out
+*.pid
+
+# Ignore VS Code & JetBrains settings
+.vscode/
+.idea/
+
+# Ignore static & media files (if needed)
+staticfiles/
+media/
