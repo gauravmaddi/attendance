@@ -22,3 +22,4 @@ env/
 # Ignore static & media files (if needed)
 staticfiles/
 media/
+.vercel
