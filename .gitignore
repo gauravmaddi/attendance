@@ -17,4 +17,5 @@ z_dev/
 
 # IDE specific
 .vscode/
+
 .idea/
