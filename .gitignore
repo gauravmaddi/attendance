@@ -1,25 +1,20 @@
-# Ignore Python & Django files
-__pycache__/
+# Django specific
+*.log
+*.pot
 *.pyc
-*.pyo
-*.db
-*.sqlite3
+__pycache__/
+db.sqlite3
+media
+
+# Environment variables
 .env
 
 # Virtual environment
-venv/
-env/
+.venv/
 
-# Ignore logs & compiled files
-*.log
-*.out
-*.pid
+# Development directory
+z_dev/
 
-# Ignore VS Code & JetBrains settings
+# IDE specific
 .vscode/
 .idea/
-
-# Ignore static & media files (if needed)
-staticfiles/
-media/
-staticfiles/

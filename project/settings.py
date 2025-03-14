@@ -11,10 +11,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "your-default-secret-key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 # ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "attendance-zrxr.onrender.com").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "attendance-zrxr.onrender.com,127.0.0.1,localhost").split(",")
+
 
 # Application definition
 INSTALLED_APPS = [
@@ -42,7 +43,7 @@ ROOT_URLCONF = "project.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'core/templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
