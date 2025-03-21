@@ -1,42 +1,143 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timesheet</title>
-    
-    {% load static %}
-<link rel="stylesheet" href="{% static 'core/main.css' %}">
-{% comment %} <script src="https://cdn.tailwindcss.com"></script> {% endcomment %}
-<script src="{% static 'core/scripts.js' %}" defer></script>
-
-
+    <title>Time Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-
-   
-    <nav class="bg-black text-white p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold">Time Sheet</h1>
-        
-        
-        <div class="calendar">
-            <input type="date" id="datePicker" class="bg-white text-black px-4 py-2 rounded cursor-pointer">
-        </div>  
-    </nav>
-
-
-    <div class="hidden">
-        bg-white p-4 rounded shadow-md text-center border m-2 text-lg font-bold text-gray-600 px-4 py-2 bg-green-500 bg-red-500 text-white
-      </div>
-    
-    <div id="cardsContainer" class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <!-- Cards will be generated here -->
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-center text-2xl font-bold mb-4">Time Tracker</h1>
+        <input type="date" id="datePicker" class="block mx-auto p-2 border border-gray-300 rounded-md mb-4">
+        <div id="cardsContainer" class="space-y-2"></div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let datePicker = document.getElementById("datePicker");
+            let cardsContainer = document.getElementById("cardsContainer");
 
-   
+            if (!datePicker || !cardsContainer) {
+                console.error("Element not found! Check your HTML IDs.");
+                return;
+            }
 
+            datePicker.addEventListener("change", function () {
+                let selectedDate = new Date(datePicker.value);
+                generateWeekCards(selectedDate);
+            });
 
+            async function fetchStoredData() {
+                try {
+                    let response = await fetch("/get-time-entries/");
+                    return await response.json();
+                } catch (error) {
+                    console.error("Error fetching stored data:", error);
+                    return [];
+                }
+            }
+
+            async function saveTimeEntry(date, inTime, outTime, duration) {
+                try {
+                    await fetch("/save-time-entry/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ date, in_time: inTime, out_time: outTime, duration })
+                    });
+                } catch (error) {
+                    console.error("Error saving time entry:", error);
+                }
+            }
+
+            async function generateWeekCards(selectedDate) {
+                let daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                let dayIndex = selectedDate.getDay();
+                let mondayOffset = dayIndex === 0 ? -6 : 1 - dayIndex;
+                let mondayDate = new Date(selectedDate);
+                mondayDate.setDate(selectedDate.getDate() + mondayOffset);
+
+                let storedData = await fetchStoredData();
+                cardsContainer.innerHTML = "";
+
+                for (let i = 0; i < 7; i++) {
+                    let newDate = new Date(mondayDate);
+                    newDate.setDate(mondayDate.getDate() + i);
+                    let formattedDate = newDate.toISOString().split('T')[0];
+                    let storedEntry = storedData.find(entry => entry.date === formattedDate);
+
+                    let inTimeValue = storedEntry ? storedEntry.in_time || "" : "";
+                    let outTimeValue = storedEntry ? storedEntry.out_time || "" : "";
+                    let durationValue = storedEntry ? storedEntry.duration || "0" : "0";
+
+                    let card = document.createElement("div");
+                    card.className = "flex items-center justify-between bg-white p-4 mb-2 rounded-lg shadow-md";
+
+                    let dateInfo = document.createElement("div");
+                    dateInfo.className = "text-left w-1/4";
+                    dateInfo.innerHTML = `<h2 class="font-bold text-lg">${daysOfWeek[newDate.getDay()]}</h2><p class="text-sm text-gray-500">${formattedDate}</p>`;
+
+                    let timeInputs = document.createElement("div");
+                    timeInputs.className = "flex gap-2 w-1/2";
+                    let inTime = createInput(inTimeValue, "IN Time");
+                    let outTime = createInput(outTimeValue, "OUT Time");
+                    let duration = createInput(durationValue, "Duration");
+                    duration.readOnly = true;
+
+                    let actionButton = document.createElement("button");
+                    actionButton.className = "px-4 py-2 text-white rounded";
+                    if (!inTimeValue) {
+                        actionButton.classList.add("bg-green-500");
+                        actionButton.innerText = "IN";
+                    } else if (!outTimeValue) {
+                        actionButton.classList.add("bg-red-500");
+                        actionButton.innerText = "OUT";
+                    } else {
+                        actionButton.style.display = "none";
+                    }
+
+                    actionButton.onclick = async function () {
+                        let now = new Date();
+                        let timeString = now.toLocaleTimeString('en-US', { hour12: false });
+                        if (actionButton.innerText === "IN") {
+                            inTime.value = timeString;
+                            actionButton.classList.remove("bg-green-500");
+                            actionButton.classList.add("bg-red-500");
+                            actionButton.innerText = "OUT";
+                        } else {
+                            outTime.value = timeString;
+                            let inDateTime = new Date(`${formattedDate} ${inTime.value}`);
+                            let outDateTime = new Date(`${formattedDate} ${outTime.value}`);
+                            let diff = (outDateTime - inDateTime) / 1000;
+                            let hours = Math.floor(diff / 3600);
+                            let minutes = Math.floor((diff % 3600) / 60);
+                            let seconds = diff % 60;
+                            duration.value = `${hours}h ${minutes}m ${seconds}s`;
+                            actionButton.style.display = "none";
+                        }
+                        await saveTimeEntry(formattedDate, inTime.value, outTime.value, duration.value);
+                    };
+
+                    timeInputs.appendChild(inTime);
+                    timeInputs.appendChild(outTime);
+
+                    card.appendChild(dateInfo);
+                    card.appendChild(timeInputs);
+                    card.appendChild(duration);
+                    card.appendChild(actionButton);
+                    cardsContainer.appendChild(card);
+                }
+            }
+
+            function createInput(value, placeholder) {
+                let input = document.createElement("input");
+                input.className = "border p-2 text-center w-full rounded-md bg-gray-50";
+                input.placeholder = placeholder;
+                input.readOnly = true;
+                input.value = value;
+                return input;
+            }
+        });
+    </script>
 </body>
 </html>
