@@ -79,19 +79,20 @@
 
                     let timeInputs = document.createElement("div");
                     timeInputs.className = "flex gap-2 w-1/2";
-                    let inTime = createInput(inTimeValue, "IN Time");
-                    let outTime = createInput(outTimeValue, "OUT Time");
+                    let inTime = createInput(inTimeValue, "Clock-IN Time");
+                    let outTime = createInput(outTimeValue, "Clock-OUT Time");
                     let duration = createInput(durationValue, "Duration");
                     duration.readOnly = true;
 
                     let actionButton = document.createElement("button");
-                    actionButton.className = "px-4 py-2 text-white rounded";
+                    actionButton.className = "px-4 py-2 text-xs text-white rounded mx-2" ;
+
                     if (!inTimeValue) {
                         actionButton.classList.add("bg-green-500");
-                        actionButton.innerText = "IN";
+                        actionButton.innerText = "Clock-IN";
                     } else if (!outTimeValue) {
                         actionButton.classList.add("bg-red-500");
-                        actionButton.innerText = "OUT";
+                        actionButton.innerText = "Clock-OUT";
                     } else {
                         actionButton.style.display = "none";
                     }
@@ -99,11 +100,11 @@
                     actionButton.onclick = async function () {
                         let now = new Date();
                         let timeString = now.toLocaleTimeString('en-US', { hour12: false });
-                        if (actionButton.innerText === "IN") {
+                        if (actionButton.innerText === "Clock-IN") {
                             inTime.value = timeString;
                             actionButton.classList.remove("bg-green-500");
                             actionButton.classList.add("bg-red-500");
-                            actionButton.innerText = "OUT";
+                            actionButton.innerText = "Clock-OUT";
                         } else {
                             outTime.value = timeString;
                             let inDateTime = new Date(`${formattedDate} ${inTime.value}`);
