@@ -90,31 +90,31 @@
           duration.readOnly = true;
 
           let actionButton = document.createElement("button");
-          actionButton.className = "px-4 py-2 text-sm font-medium text-white rounded-md transition-all duration-300 shadow-md hover:shadow-lg";
+          actionButton.className = "w-36 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition duration-300 ease-in-out transform shadow-md";
 
           if (formattedDate === todayDate) {
             if (!inTimeValue) {
-              actionButton.classList.add("bg-green-600", "hover:bg-green-700");
-              actionButton.innerText = "Clock-IN";
+              actionButton.classList.add("bg-green-500", "hover:bg-green-600", "text-white");
+              actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
             } else if (!outTimeValue) {
-              actionButton.classList.add("bg-red-600", "hover:bg-red-700");
-              actionButton.innerText = "Clock-OUT";
+              actionButton.classList.add("bg-red-500", "hover:bg-red-600", "text-white");
+              actionButton.innerHTML = "🔴 <span>Clock-OUT</span>";
             } else {
-              actionButton.classList.add("bg-green-600", "hover:bg-green-700");
-              actionButton.innerText = "Clock-IN";
+              actionButton.classList.add("bg-green-500", "hover:bg-green-600", "text-white");
+              actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
             }
 
             actionButton.onclick = async function () {
               let now = new Date();
               let timeString = now.toLocaleTimeString('en-US', { hour12: false });
 
-              if (actionButton.innerText === "Clock-IN") {
+              if (actionButton.innerText.includes("Clock-IN")) {
                 inTime.value = timeString;
                 outTime.value = "";
                 duration.value = "";
-                actionButton.classList.remove("bg-green-600");
-                actionButton.classList.add("bg-red-600");
-                actionButton.innerText = "Clock-OUT";
+                actionButton.classList.remove("bg-green-500", "hover:bg-green-600");
+                actionButton.classList.add("bg-red-500", "hover:bg-red-600");
+                actionButton.innerHTML = "🔴 <span>Clock-OUT</span>";
               } else {
                 outTime.value = timeString;
                 let inDateTime = new Date(`${formattedDate} ${inTime.value}`);
@@ -125,9 +125,9 @@
                 let seconds = Math.floor(diff % 60);
                 duration.value = `${hours}h ${minutes}m ${seconds}s`;
 
-                actionButton.classList.remove("bg-red-600");
-                actionButton.classList.add("bg-green-600");
-                actionButton.innerText = "Clock-IN";
+                actionButton.classList.remove("bg-red-500", "hover:bg-red-600");
+                actionButton.classList.add("bg-green-500", "hover:bg-green-600");
+                actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
               }
 
               await saveTimeEntry(formattedDate, inTime.value, outTime.value, duration.value);
