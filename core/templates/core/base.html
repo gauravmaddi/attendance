@@ -6,22 +6,19 @@
   <title>Time Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen font-sans">
 
-  <!-- Black Navbar -->
-  <!-- Black Navbar with Date Picker -->
-<nav class="bg-black text-white p-4 shadow">
+  <!-- Navbar -->
+  <nav class="bg-black text-white p-4 shadow-lg sticky top-0 z-10">
     <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-lg font-bold">Time Tracker</h1>
-      <input type="date" id="datePicker" class="bg-white text-black px-2 py-1 rounded-md text-sm" />
+      <h1 class="text-xl font-semibold tracking-wide">⏱️ Time Tracker</h1>
+      <input type="date" id="datePicker" class="bg-white text-black px-3 py-1 rounded-md text-sm shadow-inner hover:shadow-md transition duration-200" />
     </div>
   </nav>
-  
 
   <!-- Main Container -->
-  <div class="container mx-auto p-4">
-    {% comment %} <input type="date" id="datePicker" class="block mx-auto p-2 border border-gray-300 rounded-md mb-4"> {% endcomment %}
-    <div id="cardsContainer" class="space-y-2"></div>
+  <div class="container mx-auto p-6">
+    <div id="cardsContainer" class="space-y-4 transition-all duration-300"></div>
   </div>
 
   <script>
@@ -79,32 +76,31 @@
           let durationValue = storedEntry ? storedEntry.duration || "0" : "0";
 
           let card = document.createElement("div");
-          card.className = "flex items-center justify-between bg-white p-4 mb-2 rounded-lg shadow-md";
+          card.className = "flex flex-wrap md:flex-nowrap items-center justify-between bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1";
 
           let dateInfo = document.createElement("div");
-          dateInfo.className = "text-left w-1/4";
-          dateInfo.innerHTML = `<h2 class="font-bold text-lg">${daysOfWeek[newDate.getDay()]}</h2><p class="text-sm text-gray-500">${formattedDate}</p>`;
+          dateInfo.className = "text-left w-full md:w-1/4 mb-2 md:mb-0";
+          dateInfo.innerHTML = `<h2 class="font-semibold text-lg text-gray-800">${daysOfWeek[newDate.getDay()]}</h2><p class="text-sm text-gray-500">${formattedDate}</p>`;
 
           let timeInputs = document.createElement("div");
-          timeInputs.className = "flex gap-2 w-1/2";
-          let inTime = createInput(inTimeValue, "Clock-IN Time");
-          let outTime = createInput(outTimeValue, "Clock-OUT Time");
+          timeInputs.className = "flex gap-2 w-full md:w-1/2 mb-2 md:mb-0";
+          let inTime = createInput(inTimeValue, "Clock-IN");
+          let outTime = createInput(outTimeValue, "Clock-OUT");
           let duration = createInput(durationValue, "Duration");
           duration.readOnly = true;
 
           let actionButton = document.createElement("button");
-          actionButton.className = "px-4 py-2 text-xs text-white rounded mx-2";
+          actionButton.className = "px-4 py-2 text-sm font-medium text-white rounded-md transition-all duration-300 shadow-md hover:shadow-lg";
 
-          // Only allow action on current date
           if (formattedDate === todayDate) {
             if (!inTimeValue) {
-              actionButton.classList.add("bg-green-500");
+              actionButton.classList.add("bg-green-600", "hover:bg-green-700");
               actionButton.innerText = "Clock-IN";
             } else if (!outTimeValue) {
-              actionButton.classList.add("bg-red-500");
+              actionButton.classList.add("bg-red-600", "hover:bg-red-700");
               actionButton.innerText = "Clock-OUT";
             } else {
-              actionButton.classList.add("bg-green-500");
+              actionButton.classList.add("bg-green-600", "hover:bg-green-700");
               actionButton.innerText = "Clock-IN";
             }
 
@@ -116,8 +112,8 @@
                 inTime.value = timeString;
                 outTime.value = "";
                 duration.value = "";
-                actionButton.classList.remove("bg-green-500");
-                actionButton.classList.add("bg-red-500");
+                actionButton.classList.remove("bg-green-600");
+                actionButton.classList.add("bg-red-600");
                 actionButton.innerText = "Clock-OUT";
               } else {
                 outTime.value = timeString;
@@ -126,11 +122,11 @@
                 let diff = (outDateTime - inDateTime) / 1000;
                 let hours = Math.floor(diff / 3600);
                 let minutes = Math.floor((diff % 3600) / 60);
-                let seconds = diff % 60;
+                let seconds = Math.floor(diff % 60);
                 duration.value = `${hours}h ${minutes}m ${seconds}s`;
 
-                actionButton.classList.remove("bg-red-500");
-                actionButton.classList.add("bg-green-500");
+                actionButton.classList.remove("bg-red-600");
+                actionButton.classList.add("bg-green-600");
                 actionButton.innerText = "Clock-IN";
               }
 
@@ -144,7 +140,6 @@
             card.appendChild(duration);
             card.appendChild(actionButton);
           } else {
-            // Other days show data but no button
             card.appendChild(dateInfo);
             timeInputs.appendChild(inTime);
             timeInputs.appendChild(outTime);
@@ -158,14 +153,13 @@
 
       function createInput(value, placeholder) {
         let input = document.createElement("input");
-        input.className = "border p-2 text-center w-full rounded-md bg-gray-50";
+        input.className = "border text-sm p-2 text-center w-full rounded-md bg-gray-100 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-400";
         input.placeholder = placeholder;
         input.readOnly = true;
         input.value = value;
         return input;
       }
 
-      // Set today's date on load
       let today = new Date().toISOString().split('T')[0];
       datePicker.value = today;
       generateWeekCards(new Date(today));
