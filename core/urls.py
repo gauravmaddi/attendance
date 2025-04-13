@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import timesheet_view, save_time_entry, get_time_entries
+from . import views
 
 urlpatterns = [
-    path("", timesheet_view, name="timesheet"),
-    path("save-time-entry/", save_time_entry, name="save-time-entry"),
-    path("get-time-entries/", get_time_entries, name="get-time-entries"),
+    path('', views.timesheet_view, name='timesheet'),
+    path('save-time-entry/', views.save_time_entry, name='save_time_entry'),
+    path('get-time-entries/', views.get_time_entries, name='get_time_entries'),
 ]
