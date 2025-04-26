@@ -5,164 +5,275 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Time Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    :root {
+      --primary-color: #FF4B91;
+      --secondary-color: #FF7676;
+      --accent-color: #FFE5E5;
+      --text-color: #333333;
+    }
+    .time-entry {
+      background-color: var(--accent-color);
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      margin: 0.25rem 0;
+      font-size: 0.875rem;
+      color: var(--text-color);
+    }
+    .clock-button {
+      background-color: var(--primary-color);
+      color: white;
+      transition: all 0.3s ease;
+    }
+    .clock-button:hover {
+      background-color: var(--secondary-color);
+    }
+    .nav-button {
+      background-color: #f3f4f6;
+      border-radius: 9999px;
+      padding: 0.5rem;
+      transition: all 0.2s;
+    }
+    .nav-button:hover {
+      background-color: #e5e7eb;
+    }
+    .date-picker {
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      color: white;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+    .date-picker::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+    .header-container {
+      background-color: #1a1a1a;
+      border-bottom: 1px solid #2d2d2d;
+    }
+    .current-month {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: white;
+      margin-right: 1rem;
+    }
+  </style>
 </head>
-<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen font-sans">
+<body class="bg-gray-100 min-h-screen font-sans">
 
-  <!-- Navbar -->
-  <nav class="bg-black text-white p-4 shadow-lg sticky top-0 z-10">
-    <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-xl font-semibold tracking-wide">⏱️ Time Tracker</h1>
-      <input type="date" id="datePicker" class="bg-white text-black px-3 py-1 rounded-md text-sm shadow-inner hover:shadow-md transition duration-200" />
+  <!-- Header -->
+  <header class="header-container text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-xl font-semibold">Time Tracker</h1>
+          <span id="currentMonth" class="current-month"></span>
+          <input 
+            type="date" 
+            id="datePicker" 
+            class="date-picker"
+          >
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="prevWeek" class="nav-button">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button id="nextWeek" class="nav-button">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </div>
-  </nav>
+  </header>
 
-  <!-- Main Container -->
-  <div class="container mx-auto p-6">
-    <div id="cardsContainer" class="space-y-4 transition-all duration-300"></div>
-  </div>
+  <!-- Main Content -->
+  <main class="ml-5">
+    <div class="space-y-4 max-w-3xl py-8">
+      <!-- Time Entry Cards -->
+      <div id="timeEntryCards" class="space-y-4"></div>
+
+      <!-- Total Time Card -->
+      <div class="bg-white rounded-lg shadow p-4 flex items-center justify-between" style="max-width: 300px;">
+        <div>
+          <h3 class="text-sm font-medium text-gray-500">Total Time</h3>
+          <p id="totalTime" class="text-lg font-semibold text-gray-900">0h 0m 0s</p>
+        </div>
+      </div>
+    </div>
+  </main>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      let datePicker = document.getElementById("datePicker");
-      let cardsContainer = document.getElementById("cardsContainer");
+    document.addEventListener('DOMContentLoaded', function() {
+      const timeEntryCards = document.getElementById('timeEntryCards');
+      const totalTimeDisplay = document.getElementById('totalTime');
+      const datePicker = document.getElementById('datePicker');
+      const currentMonthDisplay = document.getElementById('currentMonth');
+      const prevWeekBtn = document.getElementById('prevWeek');
+      const nextWeekBtn = document.getElementById('nextWeek');
+      let currentDate = new Date();
 
-      datePicker.addEventListener("change", function () {
-        let selectedDate = new Date(datePicker.value);
-        generateWeekCards(selectedDate);
-      });
+      // Initialize date picker with current date
+      datePicker.value = currentDate.toISOString().split('T')[0];
+      updateCurrentMonthDisplay(currentDate);
 
-      async function fetchStoredData() {
-        try {
-          let response = await fetch("/get-time-entries/");
-          return await response.json();
-        } catch (error) {
-          console.error("Error fetching stored data:", error);
-          return [];
-        }
+      function updateCurrentMonthDisplay(date) {
+        currentMonthDisplay.textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
       }
 
-      async function saveTimeEntry(date, inTime, outTime, duration) {
+      function formatTime(date) {
+        return date.toLocaleTimeString('en-US', { 
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+
+      function showToast(message, type = 'success') {
+        Toastify({
+          text: message,
+          duration: 3000,
+          gravity: "top",
+          position: "right",
+          backgroundColor: type === 'success' ? "#4CAF50" : "#F44336",
+        }).showToast();
+      }
+
+      async function loadTimeEntries(date) {
+        const response = await fetch(`/get-time-entries/?date=${date.toISOString().split('T')[0]}`);
+        const data = await response.json();
+        return data;
+      }
+
+      async function saveTimeEntry(date, timestamp, entryType) {
         try {
-          await fetch("/save-time-entry/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ date, in_time: inTime, out_time: outTime, duration }),
+          const response = await fetch('/save-time-entry/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: date.toISOString().split('T')[0],
+              timestamp: timestamp,
+              entry_type: entryType
+            })
           });
+          const data = await response.json();
+          showToast(data.message);
+          return data;
         } catch (error) {
-          console.error("Error saving time entry:", error);
+          showToast('Error saving time entry', 'error');
+          console.error('Error:', error);
         }
       }
 
-      async function generateWeekCards(selectedDate) {
-        let daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        let todayDate = new Date().toISOString().split('T')[0];
+      function createTimeEntryCard(date, entries = [], totalDuration = "0h 0m 0s") {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg shadow p-4';
+        
+        const header = document.createElement('div');
+        header.className = 'flex justify-between items-center mb-4';
+        header.innerHTML = `
+          <div>
+            <h2 class="text-lg font-semibold">${date.toLocaleDateString('en-US', { weekday: 'long' })}</h2>
+            <p class="text-sm text-gray-500">${date.toLocaleDateString()}</p>
+          </div>
+          ${date.toDateString() === new Date().toDateString() ? `
+            <button class="clock-button px-4 py-2 rounded-full text-sm font-medium">
+              ${entries.length % 2 === 0 ? 'Clock In' : 'Clock Out'}
+            </button>
+          ` : ''}
+        `;
 
-        let dayIndex = selectedDate.getDay();
-        let mondayOffset = dayIndex === 0 ? -6 : 1 - dayIndex;
-        let mondayDate = new Date(selectedDate);
-        mondayDate.setDate(selectedDate.getDate() + mondayOffset);
+        const entriesList = document.createElement('div');
+        entriesList.className = 'space-y-2';
+        entries.forEach(entry => {
+          const entryDiv = document.createElement('div');
+          entryDiv.className = 'time-entry';
+          entryDiv.textContent = `${entry.timestamp} – ${entry.entry_type === 'IN' ? 'Clock In' : 'Clock Out'}`;
+          entriesList.appendChild(entryDiv);
+        });
 
-        let storedData = await fetchStoredData();
-        cardsContainer.innerHTML = "";
+        card.appendChild(header);
+        card.appendChild(entriesList);
+
+        if (date.toDateString() === new Date().toDateString()) {
+          const clockButton = header.querySelector('.clock-button');
+          clockButton.addEventListener('click', async () => {
+            const now = new Date();
+            const timeStr = formatTime(now);
+            const entryType = entries.length % 2 === 0 ? 'IN' : 'OUT';
+            
+            const result = await saveTimeEntry(date, timeStr, entryType);
+            if (result) {
+              const updatedData = await loadTimeEntries(date);
+              updateCard(date, updatedData.entries, updatedData.total_duration);
+              totalTimeDisplay.textContent = updatedData.total_duration;
+            }
+          });
+        }
+
+        return card;
+      }
+
+      function updateCard(date, entries, totalDuration) {
+        const existingCard = Array.from(timeEntryCards.children).find(card => {
+          const cardDate = card.querySelector('p').textContent;
+          return new Date(cardDate).toDateString() === date.toDateString();
+        });
+
+        if (existingCard) {
+          const newCard = createTimeEntryCard(date, entries, totalDuration);
+          existingCard.replaceWith(newCard);
+        }
+      }
+
+      async function initializeWeekView(selectedDate) {
+        timeEntryCards.innerHTML = '';
+        const monday = new Date(selectedDate);
+        monday.setDate(selectedDate.getDate() - selectedDate.getDay() + 1);
 
         for (let i = 0; i < 7; i++) {
-          let newDate = new Date(mondayDate);
-          newDate.setDate(mondayDate.getDate() + i);
-          let formattedDate = newDate.toISOString().split('T')[0];
-          let storedEntry = storedData.find(entry => entry.date === formattedDate);
+          const date = new Date(monday);
+          date.setDate(monday.getDate() + i);
+          const data = await loadTimeEntries(date);
+          const card = createTimeEntryCard(date, data.entries, data.total_duration);
+          timeEntryCards.appendChild(card);
 
-          let inTimeValue = storedEntry ? storedEntry.in_time || "" : "";
-          let outTimeValue = storedEntry ? storedEntry.out_time || "" : "";
-          let durationValue = storedEntry ? storedEntry.duration || "0" : "0";
-
-          let card = document.createElement("div");
-          card.className = "flex flex-wrap md:flex-nowrap items-center justify-between bg-white p-4 rounded-xl shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:-translate-y-1";
-
-          let dateInfo = document.createElement("div");
-          dateInfo.className = "text-left w-full md:w-1/4 mb-2 md:mb-0";
-          dateInfo.innerHTML = `<h2 class="font-semibold text-lg text-gray-800">${daysOfWeek[newDate.getDay()]}</h2><p class="text-sm text-gray-500">${formattedDate}</p>`;
-
-          let timeInputs = document.createElement("div");
-          timeInputs.className = "flex gap-2 w-full md:w-1/2 mb-2 md:mb-0";
-          let inTime = createInput(inTimeValue, "Clock-IN");
-          let outTime = createInput(outTimeValue, "Clock-OUT");
-          let duration = createInput(durationValue, "Duration");
-          duration.readOnly = true;
-
-          let actionButton = document.createElement("button");
-          actionButton.className = "w-36 flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition duration-300 ease-in-out transform shadow-md";
-
-          if (formattedDate === todayDate) {
-            if (!inTimeValue) {
-              actionButton.classList.add("bg-green-500", "hover:bg-green-600", "text-white");
-              actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
-            } else if (!outTimeValue) {
-              actionButton.classList.add("bg-red-500", "hover:bg-red-600", "text-white");
-              actionButton.innerHTML = "🔴 <span>Clock-OUT</span>";
-            } else {
-              actionButton.classList.add("bg-green-500", "hover:bg-green-600", "text-white");
-              actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
-            }
-
-            actionButton.onclick = async function () {
-              let now = new Date();
-              let timeString = now.toLocaleTimeString('en-US', { hour12: false });
-
-              if (actionButton.innerText.includes("Clock-IN")) {
-                inTime.value = timeString;
-                outTime.value = "";
-                duration.value = "";
-                actionButton.classList.remove("bg-green-500", "hover:bg-green-600");
-                actionButton.classList.add("bg-red-500", "hover:bg-red-600");
-                actionButton.innerHTML = "🔴 <span>Clock-OUT</span>";
-              } else {
-                outTime.value = timeString;
-                let inDateTime = new Date(`${formattedDate} ${inTime.value}`);
-                let outDateTime = new Date(`${formattedDate} ${outTime.value}`);
-                let diff = (outDateTime - inDateTime) / 1000;
-                let hours = Math.floor(diff / 3600);
-                let minutes = Math.floor((diff % 3600) / 60);
-                let seconds = Math.floor(diff % 60);
-                duration.value = `${hours}h ${minutes}m ${seconds}s`;
-
-                actionButton.classList.remove("bg-red-500", "hover:bg-red-600");
-                actionButton.classList.add("bg-green-500", "hover:bg-green-600");
-                actionButton.innerHTML = "🟢 <span>Clock-IN</span>";
-              }
-
-              await saveTimeEntry(formattedDate, inTime.value, outTime.value, duration.value);
-            };
-
-            card.appendChild(dateInfo);
-            timeInputs.appendChild(inTime);
-            timeInputs.appendChild(outTime);
-            card.appendChild(timeInputs);
-            card.appendChild(duration);
-            card.appendChild(actionButton);
-          } else {
-            card.appendChild(dateInfo);
-            timeInputs.appendChild(inTime);
-            timeInputs.appendChild(outTime);
-            card.appendChild(timeInputs);
-            card.appendChild(duration);
+          if (date.toDateString() === new Date().toDateString()) {
+            totalTimeDisplay.textContent = data.total_duration;
           }
-
-          cardsContainer.appendChild(card);
         }
       }
 
-      function createInput(value, placeholder) {
-        let input = document.createElement("input");
-        input.className = "border text-sm p-2 text-center w-full rounded-md bg-gray-100 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-400";
-        input.placeholder = placeholder;
-        input.readOnly = true;
-        input.value = value;
-        return input;
-      }
+      // Date and week navigation handlers
+      datePicker.addEventListener('change', function(e) {
+        currentDate = new Date(e.target.value);
+        updateCurrentMonthDisplay(currentDate);
+        initializeWeekView(currentDate);
+      });
 
-      let today = new Date().toISOString().split('T')[0];
-      datePicker.value = today;
-      generateWeekCards(new Date(today));
+      prevWeekBtn.addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() - 7);
+        datePicker.value = currentDate.toISOString().split('T')[0];
+        updateCurrentMonthDisplay(currentDate);
+        initializeWeekView(currentDate);
+      });
+
+      nextWeekBtn.addEventListener('click', function() {
+        currentDate.setDate(currentDate.getDate() + 7);
+        datePicker.value = currentDate.toISOString().split('T')[0];
+        updateCurrentMonthDisplay(currentDate);
+        initializeWeekView(currentDate);
+      });
+
+      initializeWeekView(currentDate);
     });
   </script>
 </body>

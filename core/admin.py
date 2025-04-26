@@ -1,6 +1,7 @@
 from django.contrib import admin
-from .models import TimeEntrys
+from .models import TimeSheet, TimeEntry
 
 # Register your models here.
 
-admin.site.register(TimeEntrys)
+admin.site.register(TimeSheet)
+admin.site.register(TimeEntry)
